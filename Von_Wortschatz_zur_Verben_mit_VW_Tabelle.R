@@ -1,11 +1,6 @@
 ################################################################################
-##  This program receives an xls file 
-##   annotate their pharmacological targets according to rDGIdb
+##  This program receives an xls file and retrieves a TSV file 
 ##  Author: Raúl Alejandro Mejía Pedroza github: https://github.com/raulmejia
-##
-#
-# Note: pwdefinitions your PtwDf_defintions and your PtwDf_defintions tables should be in the same Pathway database (KEGG , GO , etc )
-#       In DEGpvalue use the adj.P.Val
 #
 # Input description: 
 #    -f file (the xls file with more the following structure):
@@ -21,7 +16,7 @@
 #
 # Example: 
 #
-#  Rscript /path/to/Drugtarget_annotation_over_a_Dataframe_with_genesymbols.R \
+#  Rscript /path/to/ \
 #  -f /path/to/your/df/wortschatz.xls \
 #  -s Sheet1 \
 #  -l label_for_your_results \
@@ -53,6 +48,9 @@ if (!require("argparse")) {
 if (!require("plyr")) {
   BiocManager::install("plyr", ask =FALSE)
   library(plyr)}
+if (!require("stringr")) {
+  BiocManager::install("stringr", ask =FALSE)
+  library(stringr)}
 
 ##########################################################
 ## Functions that will be used 
@@ -90,19 +88,24 @@ myworksheet <- args$sheet
 
 yourxls <- read_excel( path=Path_to_xls , sheet=myworksheet)
 
-dir.create( args$outputfolder, recursive = TRUE)
-
-Path_of_Results <- normalizePath( args$outputfolder )
-# Path_of_Results <- "select/it/manually"
-
+Label_for_Results <- ""
 Label_for_Results <- args$label
 # Label_for_Results  <- "some_label"
 
 ##########################################################
-### Sading the data #####################################
+### Saving the data #####################################
 ##########################################################
-path_2_save= args$outputfolder
-write.table(file = path_2_save, quote =TRUE, row.names =TRUE, col.names = TRUE, sep="\t")
+Path_of_Results <- normalizePath( args$outputfolder )
+# Path_of_Results <- "select/it/manually"
+dir.create( Path_of_Results, recursive = TRUE)
 
-yourxls[1:100,]
-View(yourxls[1:100,] )
+Basename_inputf <-basename(Path_to_xls) # Extract the basename of your input file
+to_split <- str_split( Basename_inputf, "\\." ) # Delete the extensions (for example .xls)
+InFile_ohne_extension <- to_split[[1]][1]
+complete_path_2_save <- paste0(Path_of_Results,"/",
+                              InFile_ohne_extension,
+                              Label_for_Results, ".tsv")
+
+write.table( yourxls , file = complete_path_2_save, quote =TRUE,
+             row.names =TRUE, col.names = TRUE, sep="\t")
+
